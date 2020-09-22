@@ -28,7 +28,7 @@ def save_recording(pyaudio_obj, channels, format, rate, data):
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     # filename
     filename = os.path.join(OUTPUT_PATH, datetime.datetime.now().replace(
-        microsecond=0).isoformat() + ".wave")
+        microsecond=0).isoformat() + ".wav")
     with wave.open(filename, 'wb') as wf:
         wf.setnchannels(channels)
         wf.setsampwidth(pyaudio_obj.get_sample_size(format))
