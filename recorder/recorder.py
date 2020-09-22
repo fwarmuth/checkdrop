@@ -1,32 +1,35 @@
+from utils.logger import create_logger
+from utils.parser import parse_arguments
+import wave
+import logging
+import collections
+import matplotlib.pyplot as plt
 import pyaudio
 import struct
+import time
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
-import collections
-import logging
+# matplotlib.use('Gtk3Agg')
+matplotlib.use('TKAgg')
 
-import wave
 
-from utils.parser import parse_arguments
-from utils.logger import create_logger
-
+# Buffer size in sec
+RECORD_BUFFER_SIZE = 5
+# Threshold when amplitude is high (% of max amplitude)
+RECORD_THRESHOLD = 0.015
 
 def main(args):
-    # change matplot lib backend
-    matplotlib.use('TKAgg')
-
-
     # Audio chunk, samples per frame
     CHUNK = args.CHUNK_SIZE
     # sample format
     FORMAT = pyaudio.paInt16
-    #Mono
+    y_range = 2**16
+    # Mono
     CHANNELS = 1
     # samples per secound
     RATE = args.SAMPLE_RATE
 
-    # 
+    #
     p = pyaudio.PyAudio()
     stream = p.open(
         format=FORMAT,
@@ -37,20 +40,45 @@ def main(args):
         frames_per_buffer=CHUNK
     )
 
-    #Ring buffer
-    data = collections.deque(maxlen=5*CHUNK)
-    #fill with zeros
-    for zero in range(5*CHUNK):
+    # Record Buffer - Ring buffer
+    data = collections.deque(maxlen=RATE * RECORD_BUFFER_SIZE)
+    # fill with zeros
+    for _ in range(data.maxlen):
         data.append(0)
 
+    # preprocess absolute amplitude threshold
+    recording_amplitude_limit = (y_range / 2) * RECORD_THRESHOLD
+
+    # Visualization
     fig, ax = plt.subplots()
+    # length of x axis
+    x = np.arange(0, data.maxlen, 1)
+    line, = ax.plot(x, np.random.randint(-y_range *
+                                         0.55, y_range*0.55, data.maxlen))
+    plt.show(block=False)
 
-    #length of x axis
-    x = np.arange(0, 5*CHUNK, 1)
-    line, = ax.plot(x, np.random.randint(-2**16, 2**16, CHUNK*5))
+    # Main loop
+    while True:
+        # Read microfone
+        # raw (bytes)
+        new_data = stream.read(CHUNK)
+        # as int
+        new_data = struct.unpack(str(CHUNK) + 'h', new_data)
+        # add samples to buffer
+        for sample in new_data:
+            data.append(sample)
 
+        mean = np.mean(np.abs(new_data))
+        if mean > recording_amplitude_limit:
+            logger.debug("recording amplitude reached")
+            line.set_color('r')
+        else:
+            line.set_color('g')
 
-
+        # visualization
+        # line.set_ydata(np.array(data))
+        # fig.canvas.draw()
+        # fig.canvas.flush_events()
 
     # print("* recording")
 
@@ -73,29 +101,14 @@ def main(args):
     # wf.writeframes(b''.join(frames))
     # wf.close()
 
-    plt.show(block=False)
-    while True:
-        # raw (bytes)
-        new_data = stream.read(CHUNK)
-        # as int
-        new_data  = struct.unpack(str(CHUNK) + 'h', new_data)
-
-        # add sample to buffer
-        for sample in new_data:
-            data.append(sample)
-
-        line.set_ydata(np.array(data))
-
-        fig.canvas.draw()
-        fig.canvas.flush_events()
 
 if __name__ == "__main__":
-    logger =  create_logger("recorder")
+    logger = create_logger("recorder")
     args = parse_arguments()
     if args.verbose:
         logger.setLevel(logging.DEBUG)
         logger.info("set verbose logging mode")
-    
+
     main(args)
 
     exit(0)
