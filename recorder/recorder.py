@@ -25,7 +25,7 @@ OUTPUT_PATH = "output"
 
 def save_recording(pyaudio_obj, channels, format, rate, data):
     # create output path
-    os.makedirs(OUTPUT_PATH)
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
     # filename
     filename = os.path.join(OUTPUT_PATH, datetime.datetime.now().replace(
         microsecond=0).isoformat() + ".wave")
