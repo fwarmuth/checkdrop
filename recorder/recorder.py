@@ -36,22 +36,31 @@ def main(args):
         frames_per_buffer=CHUNK
     )
 
-    # Record Buffer - Ring buffer
-    data = collections.deque(maxlen=RATE * RECORD_BUFFER_SIZE)
+    # preRecord Buffer - Ring buffer
+    pre_record_buf = collections.deque(maxlen=RATE * RECORD_BUFFER_SIZE)
     # fill with zeros
-    for _ in range(data.maxlen):
-        data.append(0)
+    for _ in range(pre_record_buf.maxlen):
+        pre_record_buf.append(0)
 
     # preprocess absolute amplitude threshold
     recording_amplitude_limit = (y_range / 2) * RECORD_THRESHOLD
+
+    # recording flag
+    is_recording = False
+
+    # recorded_data, holding recorded data before writing in to file. 
+    recorded_data = []
+
+    # record counter
+    counter = 0
 
     # Visualization
     if args.plot:
         fig, ax = plt.subplots()
         # length of x axis
-        x = np.arange(0, data.maxlen, 1)
+        x = np.arange(0, pre_record_buf.maxlen, 1)
         line, = ax.plot(x, np.random.randint(-y_range *
-                                            0.55, y_range*0.55, data.maxlen))
+                                            0.55, y_range*0.55, pre_record_buf.maxlen))
         plt.show(block=False)
 
     # Main loop
@@ -61,17 +70,34 @@ def main(args):
         new_data = stream.read(CHUNK)
         # as int
         new_data = struct.unpack(str(CHUNK) + 'h', new_data)
-        # add samples to buffer
-        for sample in new_data:
-            data.append(sample)
 
+        # decide to start to record
         mean = np.mean(np.abs(new_data))
         if mean > recording_amplitude_limit:
             logger.debug("recording amplitude reached")
+            if not is_recording:
+                logger.info("Start new recording")
+                recorded_data = []
+                counter = 0
+                is_recording = True
+                recorded_data
+
+        # append new data to recording
+        if is_recording:
+            logger.info("recording...")
+            counter += 1
+            recorded_data.append(new_data)
+            if counter > 100:
+                is_recording = False
+                save_recording(recorded_data)
+            
+        # append new data pre record buffer
+        for sample in new_data:
+            pre_record_buf.append(sample)
 
         # visualization
         if args.plot:
-            line.set_ydata(np.array(data))
+            line.set_ydata(np.array(pre_record_buf))
             fig.canvas.draw()
             fig.canvas.flush_events()
             #TODO depend on recording state 
