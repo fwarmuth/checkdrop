@@ -3,14 +3,10 @@ from utils.parser import parse_arguments
 import wave
 import logging
 import collections
-import matplotlib.pyplot as plt
 import pyaudio
 import struct
 import time
 import numpy as np
-import matplotlib
-# matplotlib.use('Gtk3Agg')
-matplotlib.use('TKAgg')
 
 
 # Buffer size in sec
@@ -50,16 +46,17 @@ def main(args):
     recording_amplitude_limit = (y_range / 2) * RECORD_THRESHOLD
 
     # Visualization
-    fig, ax = plt.subplots()
-    # length of x axis
-    x = np.arange(0, data.maxlen, 1)
-    line, = ax.plot(x, np.random.randint(-y_range *
-                                         0.55, y_range*0.55, data.maxlen))
-    plt.show(block=False)
+    if args.plot:
+        fig, ax = plt.subplots()
+        # length of x axis
+        x = np.arange(0, data.maxlen, 1)
+        line, = ax.plot(x, np.random.randint(-y_range *
+                                            0.55, y_range*0.55, data.maxlen))
+        plt.show(block=False)
 
     # Main loop
     while True:
-        # Read microfone
+        ## Read microfone
         # raw (bytes)
         new_data = stream.read(CHUNK)
         # as int
@@ -71,14 +68,17 @@ def main(args):
         mean = np.mean(np.abs(new_data))
         if mean > recording_amplitude_limit:
             logger.debug("recording amplitude reached")
-            line.set_color('r')
-        else:
-            line.set_color('g')
 
         # visualization
-        # line.set_ydata(np.array(data))
-        # fig.canvas.draw()
-        # fig.canvas.flush_events()
+        if args.plot:
+            line.set_ydata(np.array(data))
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            #TODO depend on recording state 
+            if mean > recording_amplitude_limit:
+                line.set_color('r')
+            else:
+                line.set_color('g')
 
     # print("* recording")
 
@@ -108,6 +108,11 @@ if __name__ == "__main__":
     if args.verbose:
         logger.setLevel(logging.DEBUG)
         logger.info("set verbose logging mode")
+
+    if args.plot:
+        import matplotlib
+        matplotlib.use('TKAgg')
+        import matplotlib.pyplot as plt
 
     main(args)
 

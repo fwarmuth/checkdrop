@@ -12,6 +12,9 @@ def parse_arguments():
     # Verbose logging
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='store_true', help='set logger to debug.')
+    # matplotlib
+    parser.add_argument('--plot', dest='plot',
+                        action='store_true', help='activate matplotlib plotting.')
     # Chunk size (sample count)
     parser.add_argument('-CS', '--CHUNK_SIZE', dest='CHUNK_SIZE', default=4096,
                         type=int, help='Chunk size. number of samples within each chunk.')
