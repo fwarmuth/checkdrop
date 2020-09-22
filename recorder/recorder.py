@@ -52,42 +52,42 @@ def main(args):
 
 
 
-    print("* recording")
+    # print("* recording")
 
-    frames = []
+    # frames = []
 
-    for i in range(0, int(RATE / CHUNK * 5)):
-        data = stream.read(CHUNK)
-        frames.append(data)
+    # for i in range(0, int(RATE / CHUNK * 5)):
+    #     data = stream.read(CHUNK)
+    #     frames.append(data)
 
-    print("* done recording")
+    # print("* done recording")
 
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+    # stream.stop_stream()
+    # stream.close()
+    # p.terminate()
 
-    wf = wave.open('test.wav', 'wb')
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(p.get_sample_size(FORMAT))
-    wf.setframerate(RATE)
-    wf.writeframes(b''.join(frames))
-    wf.close()
+    # wf = wave.open('test.wav', 'wb')
+    # wf.setnchannels(CHANNELS)
+    # wf.setsampwidth(p.get_sample_size(FORMAT))
+    # wf.setframerate(RATE)
+    # wf.writeframes(b''.join(frames))
+    # wf.close()
 
-    # plt.show(block=False)
-    # while True:
-    #     # raw (bytes)
-    #     new_data = stream.read(CHUNK)
-    #     # as int
-    #     new_data  = struct.unpack(str(CHUNK) + 'h', new_data)
+    plt.show(block=False)
+    while True:
+        # raw (bytes)
+        new_data = stream.read(CHUNK)
+        # as int
+        new_data  = struct.unpack(str(CHUNK) + 'h', new_data)
 
-    #     # add sample to buffer
-    #     for sample in new_data:
-    #         data.append(sample)
+        # add sample to buffer
+        for sample in new_data:
+            data.append(sample)
 
-    #     line.set_ydata(np.array(data))
+        line.set_ydata(np.array(data))
 
-    #     fig.canvas.draw()
-    #     fig.canvas.flush_events()
+        fig.canvas.draw()
+        fig.canvas.flush_events()
 
 if __name__ == "__main__":
     logger =  create_logger("recorder")
